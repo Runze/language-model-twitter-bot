@@ -26,6 +26,7 @@ package*
 *.pkl
 *.h5
 *.png
+tmp/
 
 # Serverless directories
 .serverless

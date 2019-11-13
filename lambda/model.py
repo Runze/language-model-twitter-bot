@@ -122,18 +122,24 @@ class LM():
         sample_ix = np.random.multinomial(1, pred_probs).argmax()
         return sample_ix
 
-    def gen_seq_w_seed(self, seed_phrase, max_chars=280):
+    def gen_seq_w_seed(self, seed_phrase, seed_h0s=None, seed_c0s=None, add_bos=False, max_chars=280):
         # Tokenize and map to indices
         seed_toks = seed_phrase.split()
-        seed_toks = [self.BOS] + seed_toks
+
+        if add_bos:
+            seed_toks = [self.BOS] + seed_toks
+        
         seed_ixs = [self.stoi[tok] if tok in self.stoi else self.stoi[UNK] for tok in seed_toks]
         seed_ixs = np.array(seed_ixs).reshape(1, -1)
 
-        # Initiate states
-        seed_h0s, seed_c0s = self.init_states(1)
+        if not seed_h0s or not seed_c0s:
+            # Initialize states
+            seed_h0s, seed_c0s = self.init_states(1)
 
         # Apply model to the seed phrase
         seed_preds = self.model_w_states.predict([seed_ixs]+seed_h0s+seed_c0s)
+        
+        # Extract predictions
         seed_ixs_preds, seed_hs, seed_cs = seed_preds[0], seed_preds[1:3], seed_preds[3:]
 
         # Extract the last predicted token and use it as the seed going forward
@@ -149,7 +155,10 @@ class LM():
             seed_h0s = seed_hs
             seed_c0s = seed_cs
 
-            seed_preds = self.model_w_states.predict([np.array(seed_ix_pred).reshape(1, -1)]+seed_hs+seed_cs)
+            # Apply model
+            seed_preds = self.model_w_states.predict([np.array(seed_ix_pred).reshape(1, -1)]+seed_h0s+seed_c0s)
+            
+            # Extract predictions
             seed_ix_pred, seed_hs, seed_cs = seed_preds[0], seed_preds[1:3], seed_preds[3:]
             seed_ix_pred = self.sample_w_pred_prob(seed_ix_pred, avoid_unk=True)
             seed_tok_pred = self.itos[seed_ix_pred]
@@ -164,4 +173,4 @@ class LM():
         next_seed_h0s = seed_h0s
         next_seed_c0s = seed_c0s
         
-        return gen_phrase
+        return gen_phrase, next_seed_phrase, next_seed_h0s, next_seed_c0s
