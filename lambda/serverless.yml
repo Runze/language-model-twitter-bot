@@ -30,14 +30,14 @@ provider:
 functions:
   lambda_handler:
     handler: handler.lambda_handler
-    # events:
-    #   - http: POST /predict
+    timeout: 300
 
 plugins:
   - serverless-python-requirements
 
 custom:
   pythonRequirements:
-    slim : true
+    slim: true
+    # strip: false
     zip: true
-    dockerizePip: non-linux
+    dockerizePip: true
