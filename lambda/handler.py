@@ -67,7 +67,15 @@ print('Initialized the Twitter client.')
 def lambda_handler(event, context):
     # Generate sequence using the language model
     # seed_phrase = 'it is a truth universally acknowledged'
-    gen_phrase, next_seed_phrase, next_seed_h0s, next_seed_c0s = lm.gen_seq_w_seed(seed_phrase, seed_h0s, seed_c0s, add_bos=False)
+    gen_phrase = ''
+    
+    # Sometimes the model returns an empty sequence
+    # Hence, try at most `max_retry` times until a non-empty sequence is returned
+    max_retry = 3
+    while not gen_phrase and max_retry > 0:
+        gen_phrase, next_seed_phrase, next_seed_h0s, next_seed_c0s = lm.gen_seq_w_seed(seed_phrase, seed_h0s, seed_c0s, add_bos=False)
+        max_retry -= 1
+    
     print(gen_phrase)
     print(next_seed_phrase)
 
